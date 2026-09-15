@@ -338,8 +338,14 @@
   .trail-name{font-size:15px;}
   .trail-arrow{color:var(--dim);font-size:18px;}
 
-  .again-btn{
-    margin-top:44px;
+  .start-actions{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:16px;
+  }
+
+  .btn-outline{
     background:transparent;
     color:var(--cream);
     border:2px solid var(--navy-600);
@@ -351,7 +357,64 @@
     cursor:pointer;
     transition:border-color .15s ease, color .15s ease;
   }
-  .again-btn:hover{border-color:var(--gold-soft);color:var(--gold-soft);}
+  .btn-outline:hover{border-color:var(--gold-soft);color:var(--gold-soft);}
+
+  .results-actions{
+    margin-top:44px;
+    display:flex;
+    flex-wrap:wrap;
+    justify-content:center;
+    gap:16px;
+  }
+
+  /* ---------- QUIZ SCREEN ---------- */
+  .quiz-options{
+    width:100%;
+    max-width:560px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+  .quiz-option{
+    background:var(--navy-800);
+    border:2px solid var(--navy-700);
+    border-radius:var(--radius-card);
+    padding:18px 22px;
+    text-align:left;
+    font-family:'Inter',sans-serif;
+    font-size:17px;
+    font-weight:500;
+    color:var(--cream);
+    cursor:pointer;
+    transition:transform .15s ease, border-color .15s ease, background .15s ease;
+  }
+  .quiz-option:hover{
+    border-color:var(--gold);
+    background:var(--navy-700);
+    transform:translateX(4px);
+  }
+  .quiz-option:focus-visible{
+    outline:3px solid var(--gold);
+    outline-offset:3px;
+  }
+
+  .quiz-tags{
+    margin-top:14px;
+    display:flex;
+    gap:10px;
+    flex-wrap:wrap;
+    justify-content:center;
+  }
+  .quiz-tag{
+    border:1px solid var(--gold-soft);
+    color:var(--gold-soft);
+    font-size:12px;
+    font-weight:700;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    padding:6px 14px;
+    border-radius:var(--radius-pill);
+  }
 </style>
 </head>
 <body>
@@ -361,7 +424,10 @@
   <div class="start-eyebrow">Colorway Bracket</div>
   <h1 class="start-title">Sixteen pairs.<br>One <span>favorite</span>.</h1>
   <p class="start-sub">Sixteen colorways enter. Every round you pick one to advance, until only your favorite is left standing.</p>
-  <button class="play-btn" id="play-btn">Play</button>
+  <div class="start-actions">
+    <button class="play-btn" id="play-btn">Play the Bracket</button>
+    <button class="btn-outline" id="quiz-btn">Take the Personality Quiz</button>
+  </div>
   <div class="start-count">
     <div><b>16</b>Colorways</div>
     <div><b>15</b>Match-ups</div>
@@ -395,7 +461,41 @@
 
   <div class="trail" id="trail"></div>
 
-  <button class="again-btn" id="again-btn">Play again</button>
+  <div class="results-actions">
+    <button class="btn-outline" id="again-btn">Play again</button>
+    <button class="btn-outline" id="bracket-home-btn">Back to home</button>
+  </div>
+</section>
+
+<!-- ================= PERSONALITY QUIZ SCREEN ================= -->
+<section id="quiz-screen" class="screen">
+  <div class="game-top">
+    <div class="round-label">Personality Quiz</div>
+    <div class="match-count" id="quiz-count">Question 1 of 20</div>
+    <div class="progress-track"><div class="progress-fill" id="quiz-progress-fill"></div></div>
+  </div>
+  <h2 class="prompt" id="quiz-prompt"></h2>
+  <div class="quiz-options" id="quiz-options">
+    <!-- option buttons injected by JS -->
+  </div>
+</section>
+
+<!-- ================= QUIZ RESULTS SCREEN ================= -->
+<section id="quiz-results-screen" class="screen">
+  <h2 class="results-title">Your shoe personality</h2>
+  <p class="results-sub">Based on your answers, this is the colorway that matches you.</p>
+
+  <div class="champion-card">
+    <div class="champion-crown">Your Match</div>
+    <div class="champion-img-wrap"><img id="quiz-result-img" alt=""></div>
+    <div class="champion-name" id="quiz-result-name"></div>
+    <div class="quiz-tags" id="quiz-result-tags"></div>
+  </div>
+
+  <div class="results-actions">
+    <button class="btn-outline" id="quiz-again-btn">Take it again</button>
+    <button class="btn-outline" id="quiz-home-btn">Back to home</button>
+  </div>
 </section>
 
 <script>
@@ -604,6 +704,269 @@ function trailSide(player, isWinner) {
 
 document.getElementById("play-btn").addEventListener("click", startGame);
 document.getElementById("again-btn").addEventListener("click", () => {
+  showScreen("start-screen");
+});
+document.getElementById("bracket-home-btn").addEventListener("click", () => {
+  showScreen("start-screen");
+});
+
+/* =========================================================
+   PERSONALITY QUIZ
+   Each shoe has a "personality" — six traits on a 0-10 scale.
+   Each question's answers nudge those same six traits. After
+   20 questions, we match the accumulated trait profile against
+   the shoe whose profile is closest.
+   ========================================================= */
+const SHOE_TRAITS = {
+  1:  { energy:8, boldness:9, romance:2, nostalgia:3, team:2,  edge:9 }, // Travis Scott Black
+  2:  { energy:4, boldness:3, romance:8, nostalgia:6, team:8,  edge:2 }, // Friendship Bracelet
+  3:  { energy:8, boldness:6, romance:2, nostalgia:4, team:9,  edge:3 }, // Caitlin Clark Blue
+  4:  { energy:7, boldness:7, romance:2, nostalgia:6, team:10, edge:4 }, // Kansas City Chiefs
+  5:  { energy:6, boldness:8, romance:3, nostalgia:7, team:3,  edge:6 }, // Grinches
+  6:  { energy:7, boldness:7, romance:2, nostalgia:3, team:8,  edge:6 }, // NY Liberty
+  7:  { energy:8, boldness:8, romance:5, nostalgia:2, team:2,  edge:5 }, // Hot Punch
+  8:  { energy:6, boldness:7, romance:3, nostalgia:3, team:2,  edge:7 }, // Purple Face
+  9:  { energy:2, boldness:2, romance:7, nostalgia:8, team:1,  edge:1 }, // Snow White
+  10: { energy:2, boldness:1, romance:3, nostalgia:5, team:1,  edge:2 }, // Cave Stone
+  11: { energy:6, boldness:6, romance:2, nostalgia:7, team:9,  edge:3 }, // University of Iowa
+  12: { energy:7, boldness:8, romance:2, nostalgia:6, team:8,  edge:3 }, // USA Red
+  13: { energy:4, boldness:4, romance:3, nostalgia:7, team:7,  edge:1 }, // USA White
+  14: { energy:6, boldness:6, romance:8, nostalgia:4, team:1,  edge:5 }, // Valentine's Day reversed
+  15: { energy:3, boldness:3, romance:10,nostalgia:5, team:1,  edge:1 }, // Valentine's Day
+  16: { energy:9, boldness:7, romance:3, nostalgia:2, team:2,  edge:4 }, // Yellow Zest
+};
+
+const AXIS_LABELS = {
+  energy:    "High-Energy",
+  boldness:  "Bold",
+  romance:   "Romantic",
+  nostalgia: "Nostalgic",
+  team:      "Team Spirit",
+  edge:      "Edgy",
+};
+
+const QUIZ_QUESTIONS = [
+  { prompt: "Pick your Friday night:", options: [
+    { text: "Courtside seats, on your feet screaming", scores: { energy:3, team:2 } },
+    { text: "Cozy night in with your favorite person", scores: { romance:3 } },
+    { text: "Out with the whole squad", scores: { team:2, boldness:1 } },
+    { text: "A quiet drive, no destination", scores: { edge:2, nostalgia:1 } },
+  ]},
+  { prompt: "Your go-to karaoke song is...", options: [
+    { text: "An arena anthem everyone screams together", scores: { team:3, energy:2 } },
+    { text: "A slow love song", scores: { romance:3 } },
+    { text: "A Y2K throwback bop", scores: { nostalgia:3, energy:1 } },
+    { text: "Something nobody expects you to pick", scores: { edge:3 } },
+  ]},
+  { prompt: "Pick a color you'd wear head to toe:", options: [
+    { text: "Hot pink", scores: { boldness:2, romance:1 } },
+    { text: "All black", scores: { edge:3, boldness:1 } },
+    { text: "Red, white & blue", scores: { team:2, nostalgia:1 } },
+    { text: "Soft pastels", scores: { romance:2, nostalgia:1 } },
+  ]},
+  { prompt: "How do you take criticism?", options: [
+    { text: "Straight up, don't sugarcoat it", scores: { boldness:2, edge:1 } },
+    { text: "I need it delivered gently", scores: { romance:2 } },
+    { text: "Depends who it's from — loyalty matters", scores: { team:2 } },
+    { text: "I've heard it all before", scores: { nostalgia:2 } },
+  ]},
+  { prompt: "Pick a movie genre for tonight:", options: [
+    { text: "Sports underdog story", scores: { energy:2, team:2 } },
+    { text: "A romcom", scores: { romance:3 } },
+    { text: "A holiday classic", scores: { nostalgia:2, boldness:1 } },
+    { text: "A coming-of-age indie", scores: { edge:2 } },
+  ]},
+  { prompt: "Your ideal trophy case would have...", options: [
+    { text: "Championship rings", scores: { boldness:2, team:2 } },
+    { text: "Love letters and ticket stubs", scores: { romance:2, nostalgia:1 } },
+    { text: "Wristbands from every concert", scores: { energy:2, edge:1 } },
+    { text: "Nothing — you don't need the proof", scores: { edge:2 } },
+  ]},
+  { prompt: "Choose a scent:", options: [
+    { text: "Fresh laundry", scores: { nostalgia:2 } },
+    { text: "Vanilla and roses", scores: { romance:3 } },
+    { text: "Citrus, wakes you up", scores: { energy:2 } },
+    { text: "Leather jacket", scores: { edge:3 } },
+  ]},
+  { prompt: "What's your love language?", options: [
+    { text: "Words of affirmation, loudly", scores: { romance:2, boldness:1 } },
+    { text: "Quality time, one on one", scores: { romance:3 } },
+    { text: "Acts of service, showing up", scores: { team:2 } },
+    { text: "Just being in the same room", scores: { nostalgia:1, romance:1 } },
+  ]},
+  { prompt: "Your dream stadium moment:", options: [
+    { text: "Buzzer beater, crowd going wild", scores: { energy:3, boldness:2 } },
+    { text: "Slow dance under the lights", scores: { romance:2, nostalgia:1 } },
+    { text: "The whole section singing together", scores: { team:3 } },
+    { text: "Sneaking somewhere you're not supposed to be", scores: { edge:2 } },
+  ]},
+  { prompt: "Pick a holiday:", options: [
+    { text: "Valentine's Day", scores: { romance:3 } },
+    { text: "The Fourth of July", scores: { team:2, nostalgia:1 } },
+    { text: "Christmas", scores: { nostalgia:2, boldness:1 } },
+    { text: "New Year's Eve, no plan", scores: { edge:2, energy:1 } },
+  ]},
+  { prompt: "How do you enter a room?", options: [
+    { text: "Loud — everyone knows you're there", scores: { boldness:3, energy:1 } },
+    { text: "Quietly, you don't need the attention", scores: { nostalgia:1, edge:1 } },
+    { text: "Scanning for your people first", scores: { team:2 } },
+    { text: "Depends entirely on the mood", scores: { edge:2 } },
+  ]},
+  { prompt: "Pick a texture:", options: [
+    { text: "Suede", scores: { romance:2, nostalgia:1 } },
+    { text: "Patent leather, shiny", scores: { boldness:2 } },
+    { text: "Worn-in denim", scores: { nostalgia:2, edge:1 } },
+    { text: "Glitter", scores: { energy:2, boldness:1 } },
+  ]},
+  { prompt: "Your friend group's group chat name is...", options: [
+    { text: "Something only you understand", scores: { edge:2 } },
+    { text: "A running inside joke from years ago", scores: { nostalgia:2, team:1 } },
+    { text: "A sports reference", scores: { team:2, energy:1 } },
+    { text: "Full of hearts and nicknames", scores: { romance:2 } },
+  ]},
+  { prompt: "Pick a weather:", options: [
+    { text: "Game-day sunshine", scores: { energy:2, team:1 } },
+    { text: "Snow-globe quiet", scores: { nostalgia:2, romance:1 } },
+    { text: "A storm rolling in", scores: { edge:2, boldness:1 } },
+    { text: "Golden hour, every time", scores: { romance:2 } },
+  ]},
+  { prompt: "What's on your bucket list?", options: [
+    { text: "Front row at a championship game", scores: { team:2, energy:2 } },
+    { text: "A love story people write about", scores: { romance:3 } },
+    { text: "Somewhere no one's been before", scores: { edge:2 } },
+    { text: "Relive your favorite year", scores: { nostalgia:2 } },
+  ]},
+  { prompt: "Pick a snack for the game:", options: [
+    { text: "Nachos, extra everything", scores: { energy:2, boldness:1 } },
+    { text: "Popcorn, sharing size", scores: { team:1, romance:1 } },
+    { text: "Whatever's classic — it always works", scores: { nostalgia:2 } },
+    { text: "Something spicy, no apologies", scores: { edge:2, boldness:1 } },
+  ]},
+  { prompt: "How competitive are you, honestly?", options: [
+    { text: "Extremely. I keep score.", scores: { boldness:3, energy:1 } },
+    { text: "Only when it's for my people", scores: { team:2 } },
+    { text: "I'm here for the vibes", scores: { edge:2 } },
+    { text: "I compete with myself, quietly", scores: { nostalgia:2 } },
+  ]},
+  { prompt: "Your phone lock screen is...", options: [
+    { text: "A team, a player, a moment", scores: { team:3 } },
+    { text: "You and someone you love", scores: { romance:3 } },
+    { text: "A throwback photo", scores: { nostalgia:2 } },
+    { text: "Something no one else would pick", scores: { edge:2 } },
+  ]},
+  { prompt: "Pick a soundtrack for your life:", options: [
+    { text: "Stadium walk-out music", scores: { energy:3, boldness:1 } },
+    { text: "A mixtape made for one person", scores: { romance:3 } },
+    { text: "Songs that raised you", scores: { nostalgia:2, team:1 } },
+    { text: "Whatever's playing when nobody's watching", scores: { edge:2 } },
+  ]},
+  { prompt: "Last question — pick one word:", options: [
+    { text: "Bold", scores: { boldness:3 } },
+    { text: "Devoted", scores: { romance:2, team:1 } },
+    { text: "Classic", scores: { nostalgia:3 } },
+    { text: "Unbothered", scores: { edge:3 } },
+  ]},
+];
+
+const QUIZ_AXES = ["energy", "boldness", "romance", "nostalgia", "team", "edge"];
+
+let quizState = {
+  index: 0,
+  scores: { energy:0, boldness:0, romance:0, nostalgia:0, team:0, edge:0 },
+};
+
+function startQuiz() {
+  quizState = {
+    index: 0,
+    scores: { energy:0, boldness:0, romance:0, nostalgia:0, team:0, edge:0 },
+  };
+  renderQuizQuestion();
+  showScreen("quiz-screen");
+}
+
+function renderQuizQuestion() {
+  const q = QUIZ_QUESTIONS[quizState.index];
+  document.getElementById("quiz-count").textContent =
+    `Question ${quizState.index + 1} of ${QUIZ_QUESTIONS.length}`;
+  document.getElementById("quiz-progress-fill").style.width =
+    `${(quizState.index / QUIZ_QUESTIONS.length) * 100}%`;
+  document.getElementById("quiz-prompt").textContent = q.prompt;
+
+  const container = document.getElementById("quiz-options");
+  container.innerHTML = "";
+  q.options.forEach(option => {
+    const btn = document.createElement("button");
+    btn.className = "quiz-option";
+    btn.textContent = option.text;
+    btn.onclick = () => answerQuiz(option);
+    container.appendChild(btn);
+  });
+}
+
+function answerQuiz(option) {
+  QUIZ_AXES.forEach(axis => {
+    if (option.scores[axis]) quizState.scores[axis] += option.scores[axis];
+  });
+  quizState.index++;
+
+  if (quizState.index < QUIZ_QUESTIONS.length) {
+    renderQuizQuestion();
+  } else {
+    document.getElementById("quiz-progress-fill").style.width = "100%";
+    finishQuiz();
+  }
+}
+
+function finishQuiz() {
+  const raw = quizState.scores;
+  const values = QUIZ_AXES.map(axis => raw[axis]);
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const spread = max - min || 1;
+
+  const normalized = {};
+  QUIZ_AXES.forEach(axis => {
+    normalized[axis] = ((raw[axis] - min) / spread) * 10;
+  });
+
+  let bestId = null;
+  let bestDistance = Infinity;
+  Object.keys(SHOE_TRAITS).forEach(id => {
+    const traits = SHOE_TRAITS[id];
+    const distance = Math.sqrt(
+      QUIZ_AXES.reduce((sum, axis) => sum + Math.pow(normalized[axis] - traits[axis], 2), 0)
+    );
+    if (distance < bestDistance) {
+      bestDistance = distance;
+      bestId = Number(id);
+    }
+  });
+
+  const match = COLORWAYS.find(c => c.id === bestId);
+  const topAxes = QUIZ_AXES.slice().sort((a, b) => raw[b] - raw[a]).slice(0, 2);
+
+  renderQuizResults(match, topAxes);
+  showScreen("quiz-results-screen");
+}
+
+function renderQuizResults(match, topAxes) {
+  document.getElementById("quiz-result-img").src = ASSET_PATH + match.file;
+  document.getElementById("quiz-result-img").alt = match.name;
+  document.getElementById("quiz-result-name").textContent = match.name;
+
+  const tagContainer = document.getElementById("quiz-result-tags");
+  tagContainer.innerHTML = "";
+  topAxes.forEach(axis => {
+    const tag = document.createElement("span");
+    tag.className = "quiz-tag";
+    tag.textContent = AXIS_LABELS[axis];
+    tagContainer.appendChild(tag);
+  });
+}
+
+document.getElementById("quiz-btn").addEventListener("click", startQuiz);
+document.getElementById("quiz-again-btn").addEventListener("click", startQuiz);
+document.getElementById("quiz-home-btn").addEventListener("click", () => {
   showScreen("start-screen");
 });
 </script>
