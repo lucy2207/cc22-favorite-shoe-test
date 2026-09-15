@@ -1,0 +1,611 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Colorway Bracket</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --navy-900:#1B0509;
+    --navy-800:#2C0C14;
+    --navy-700:#431520;
+    --navy-600:#5C1D2B;
+    --gold:#E8203D;
+    --gold-soft:#FF6FA5;
+    --cream:#FBEFF0;
+    --muted:#D98CA0;
+    --dim:#8C4A57;
+    --radius-card: 14px;
+    --radius-pill: 999px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--navy-900);
+    color:var(--cream);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  .screen{
+    width:100%;
+    max-width:1180px;
+    padding:32px 20px 64px;
+    display:none;
+    flex-direction:column;
+    align-items:center;
+    min-height:100vh;
+    justify-content:center;
+  }
+  .screen.active{display:flex;}
+
+  h1,h2,h3{font-family:'Anton',sans-serif;font-weight:400;letter-spacing:0.02em;margin:0;}
+
+  /* ---------- START SCREEN ---------- */
+  .start-eyebrow{
+    color:var(--gold);
+    font-size:14px;
+    font-weight:600;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .start-title{
+    font-size:clamp(42px,9vw,76px);
+    line-height:0.98;
+    text-align:center;
+    color:var(--cream);
+  }
+  .start-title span{color:var(--gold-soft);}
+  .start-sub{
+    max-width:480px;
+    text-align:center;
+    color:var(--muted);
+    font-size:16px;
+    line-height:1.6;
+    margin:20px 0 40px;
+  }
+  .play-btn{
+    background:var(--gold);
+    color:var(--cream);
+    border:none;
+    font-family:'Anton',sans-serif;
+    font-size:22px;
+    letter-spacing:0.03em;
+    padding:18px 56px;
+    border-radius:var(--radius-pill);
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+    box-shadow:0 0 0 0 rgba(232,32,61,0.5);
+  }
+  .play-btn:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(232,32,61,0.35);}
+  .play-btn:active{transform:translateY(0px);}
+
+  .start-count{
+    margin-top:36px;
+    display:flex;
+    gap:28px;
+    color:var(--dim);
+    font-size:13px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+  }
+  .start-count b{color:var(--cream);display:block;font-family:'Anton',sans-serif;font-size:26px;letter-spacing:0;}
+
+  /* ---------- GAME SCREEN ---------- */
+  .game-top{
+    width:100%;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    margin-bottom:36px;
+  }
+  .round-label{
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    color:var(--gold);
+    margin-bottom:6px;
+  }
+  .match-count{
+    font-size:13px;
+    color:var(--dim);
+    margin-bottom:16px;
+  }
+  .progress-track{
+    width:100%;
+    max-width:360px;
+    height:4px;
+    background:var(--navy-700);
+    border-radius:2px;
+    overflow:hidden;
+  }
+  .progress-fill{
+    height:100%;
+    background:linear-gradient(90deg, var(--gold), var(--gold-soft));
+    width:0%;
+    transition:width .4s ease;
+  }
+
+  .prompt{
+    font-size:clamp(28px,5vw,42px);
+    text-align:center;
+    margin-bottom:40px;
+    color:var(--cream);
+  }
+
+  .matchup{
+    width:100%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:0;
+    position:relative;
+  }
+  .pick-card{
+    background:var(--navy-800);
+    border:2px solid var(--navy-700);
+    border-radius:var(--radius-card);
+    padding:24px;
+    width:min(480px,42vw);
+    cursor:pointer;
+    color:inherit;
+    font-family:inherit;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:18px;
+    transition:transform .18s ease, border-color .18s ease, background .18s ease;
+  }
+  .pick-card:hover{
+    border-color:var(--gold);
+    transform:translateY(-6px);
+    background:var(--navy-700);
+  }
+  .pick-card:focus-visible{
+    outline:3px solid var(--gold);
+    outline-offset:3px;
+  }
+  .pick-card.chosen{
+    border-color:var(--gold);
+    background:var(--navy-700);
+  }
+  .pick-card img{
+    width:100%;
+    aspect-ratio:1/1;
+    object-fit:contain;
+    background:var(--navy-900);
+    border-radius:8px;
+  }
+  .pick-name{
+    font-size:19px;
+    font-weight:600;
+    text-align:center;
+  }
+  .img-missing{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    text-align:center;
+    font-size:12px;
+    color:var(--dim);
+    border:1px dashed var(--navy-600);
+    padding:10px;
+  }
+
+  .vs-badge{
+    flex:0 0 auto;
+    width:80px;
+    height:80px;
+    border-radius:50%;
+    background:var(--gold);
+    color:var(--cream);
+    font-family:'Anton',sans-serif;
+    font-size:24px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    margin:0 -6px;
+    z-index:2;
+    box-shadow:0 0 0 8px var(--navy-900);
+  }
+
+  @media (max-width:640px){
+    .matchup{flex-direction:column;gap:20px;}
+    .pick-card{width:min(420px,88vw);}
+    .vs-badge{margin:-14px 0;}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    .pick-card, .play-btn, .progress-fill{transition:none;}
+  }
+
+  /* ---------- RESULTS SCREEN ---------- */
+  .results-title{
+    font-size:clamp(30px,6vw,44px);
+    text-align:center;
+    margin-bottom:6px;
+  }
+  .results-sub{
+    color:var(--muted);
+    font-size:15px;
+    margin-bottom:36px;
+    text-align:center;
+  }
+
+  .champion-card{
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    margin-bottom:48px;
+  }
+  .champion-crown{
+    color:var(--gold);
+    font-size:13px;
+    font-weight:700;
+    letter-spacing:0.18em;
+    text-transform:uppercase;
+    margin-bottom:14px;
+  }
+  .champion-img-wrap{
+    width:300px;
+    height:300px;
+    border-radius:20px;
+    background:var(--navy-800);
+    border:4px solid var(--gold);
+    box-shadow:0 0 50px rgba(255,111,165,0.35);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding:24px;
+  }
+  .champion-img-wrap img{width:100%;height:100%;object-fit:contain;}
+  .champion-name{
+    margin-top:18px;
+    font-size:30px;
+    font-family:'Anton',sans-serif;
+  }
+
+  .trail{
+    width:100%;
+    max-width:620px;
+    position:relative;
+    padding-left:26px;
+  }
+  .trail::before{
+    content:"";
+    position:absolute;
+    left:9px;
+    top:10px;
+    bottom:10px;
+    width:2px;
+    background:var(--navy-700);
+  }
+  .trail-row{
+    position:relative;
+    display:flex;
+    align-items:center;
+    gap:14px;
+    padding:14px 0;
+  }
+  .trail-row::before{
+    content:"";
+    position:absolute;
+    left:-26px;
+    top:50%;
+    transform:translateY(-50%);
+    width:11px;
+    height:11px;
+    border-radius:50%;
+    background:var(--gold);
+    box-shadow:0 0 0 4px var(--navy-900);
+  }
+  .trail-round-label{
+    position:absolute;
+    left:-26px;
+    top:-2px;
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.1em;
+    text-transform:uppercase;
+    color:var(--dim);
+  }
+  .trail-beaten,.trail-winner{
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .trail-thumb{
+    width:64px;
+    height:64px;
+    border-radius:10px;
+    object-fit:contain;
+    background:var(--navy-800);
+    flex:0 0 auto;
+  }
+  .trail-beaten{opacity:0.45;}
+  .trail-beaten .trail-thumb{border:1px solid var(--navy-700);}
+  .trail-winner .trail-thumb{border:2px solid var(--gold);}
+  .trail-name{font-size:15px;}
+  .trail-arrow{color:var(--dim);font-size:18px;}
+
+  .again-btn{
+    margin-top:44px;
+    background:transparent;
+    color:var(--cream);
+    border:2px solid var(--navy-600);
+    font-family:'Inter',sans-serif;
+    font-weight:600;
+    font-size:15px;
+    padding:14px 32px;
+    border-radius:var(--radius-pill);
+    cursor:pointer;
+    transition:border-color .15s ease, color .15s ease;
+  }
+  .again-btn:hover{border-color:var(--gold-soft);color:var(--gold-soft);}
+</style>
+</head>
+<body>
+
+<!-- ================= START SCREEN ================= -->
+<section id="start-screen" class="screen active">
+  <div class="start-eyebrow">Colorway Bracket</div>
+  <h1 class="start-title">Sixteen pairs.<br>One <span>favorite</span>.</h1>
+  <p class="start-sub">Sixteen colorways enter. Every round you pick one to advance, until only your favorite is left standing.</p>
+  <button class="play-btn" id="play-btn">Play</button>
+  <div class="start-count">
+    <div><b>16</b>Colorways</div>
+    <div><b>15</b>Match-ups</div>
+    <div><b>1</b>Champion</div>
+  </div>
+</section>
+
+<!-- ================= GAME SCREEN ================= -->
+<section id="game-screen" class="screen">
+  <div class="game-top">
+    <div class="round-label" id="round-label">Round of 16</div>
+    <div class="match-count" id="match-count">Pick 1 of 15</div>
+    <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  </div>
+  <h2 class="prompt">Which do you prefer?</h2>
+  <div class="matchup" id="matchup">
+    <!-- pick cards injected by JS -->
+  </div>
+</section>
+
+<!-- ================= RESULTS SCREEN ================= -->
+<section id="results-screen" class="screen">
+  <h2 class="results-title">Your favorite</h2>
+  <p class="results-sub">Here's the road it took to get there.</p>
+
+  <div class="champion-card">
+    <div class="champion-crown">Champion</div>
+    <div class="champion-img-wrap"><img id="champion-img" alt=""></div>
+    <div class="champion-name" id="champion-name"></div>
+  </div>
+
+  <div class="trail" id="trail"></div>
+
+  <button class="again-btn" id="again-btn">Play again</button>
+</section>
+
+<script>
+/* =========================================================
+   CONFIG — edit this list to match your own image files.
+   "file" is just the filename inside the /assets folder.
+   Mixing .png / .jpg / .webp is totally fine — the <img>
+   tag doesn't care about extension, it just needs the
+   right filename for each entry.
+   ========================================================= */
+const COLORWAYS = [
+  { id: 1,  name: "Travis Scott Black",     file: "black.jpg"  },
+  { id: 2,  name: "Friendship Bracelet",    file: "bracelet.jpeg"  },
+  { id: 3,  name: "Caitlin Clark Blue",     file: "cc-blue.webp"  },
+  { id: 4,  name: "Kansas City Chiefs",     file: "chiefs.jpeg"  },
+  { id: 5,  name: "Grinches",               file: "grinch.webp" },
+  { id: 6,  name: "NY liberty",             file: "liberty.jpg"  },
+  { id: 7,  name: "Hot Punch",              file: "pink.jpg"  },
+  { id: 8,  name: "Purple Face",            file: "purple.webp"  },
+  { id: 9,  name: "Snow White",              file: "snow-white.webp"  },
+  { id: 10, name: "Cave Stone",              file: "stone.jpg" },
+  { id: 11, name: "University of Iowa",       file: "uiowa.jpg"  },
+  { id: 12, name: "USA Red",               file: "usa-red.jpeg"  },
+  { id: 13, name: "USA White",                file: "usa-white.jpeg"  },
+  { id: 14, name: "Valentine's Day reversed",        file: "valentine-rev.jpeg"  },
+  { id: 15, name: "Valentine's Day",    file: "valentine.png"  },
+  { id: 16, name: "Yellow Zest",   file: "yellow.webp"  },
+];
+
+const ASSET_PATH = "assets/";
+const ROUND_NAMES = ["Round of 16", "Elite 8", "Final 4", "Championship"];
+const TOTAL_MATCHES = 15; // 8 + 4 + 2 + 1
+
+let state = {
+  roundIndex: 0,
+  players: [],      // players remaining in the current round
+  matches: [],       // pairs for the current round
+  matchIndex: 0,
+  winners: [],        // winners collected so far this round
+  pickLog: [],          // {round, winner, loser} for every match played
+  matchesPlayed: 0,
+};
+
+function shuffle(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function showScreen(id) {
+  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+}
+
+function startGame() {
+  state = {
+    roundIndex: 0,
+    players: shuffle(COLORWAYS),
+    matches: [],
+    matchIndex: 0,
+    winners: [],
+    pickLog: [],
+    matchesPlayed: 0,
+  };
+  buildRound();
+  showScreen("game-screen");
+}
+
+function buildRound() {
+  const shuffledPlayers = shuffle(state.players);
+  state.matches = [];
+  for (let i = 0; i < shuffledPlayers.length; i += 2) {
+    state.matches.push([shuffledPlayers[i], shuffledPlayers[i + 1]]);
+  }
+  state.matchIndex = 0;
+  state.winners = [];
+  renderMatch();
+}
+
+function renderMatch() {
+  document.getElementById("round-label").textContent = ROUND_NAMES[state.roundIndex];
+  document.getElementById("match-count").textContent =
+    `Pick ${state.matchesPlayed + 1} of ${TOTAL_MATCHES}`;
+  document.getElementById("progress-fill").style.width =
+    `${(state.matchesPlayed / TOTAL_MATCHES) * 100}%`;
+
+  const [left, right] = state.matches[state.matchIndex];
+  const container = document.getElementById("matchup");
+  container.innerHTML = "";
+  container.appendChild(makeCard(left));
+
+  const vs = document.createElement("div");
+  vs.className = "vs-badge";
+  vs.textContent = "VS";
+  container.appendChild(vs);
+
+  container.appendChild(makeCard(right));
+}
+
+function makeCard(player) {
+  const btn = document.createElement("button");
+  btn.className = "pick-card";
+  btn.setAttribute("aria-label", `Choose ${player.name}`);
+
+  const img = document.createElement("img");
+  img.src = ASSET_PATH + player.file;
+  img.alt = player.name;
+  img.onerror = () => {
+    img.replaceWith(Object.assign(document.createElement("div"), {
+      className: "img-missing",
+      style: "width:100%;aspect-ratio:1/1;border-radius:8px;",
+      textContent: `Image not found:\n${player.file}`,
+    }));
+  };
+
+  const name = document.createElement("div");
+  name.className = "pick-name";
+  name.textContent = player.name;
+
+  btn.appendChild(img);
+  btn.appendChild(name);
+  btn.onclick = () => choose(player, player === state.matches[state.matchIndex][0]
+    ? state.matches[state.matchIndex][1]
+    : state.matches[state.matchIndex][0]);
+  return btn;
+}
+
+function choose(winner, loser) {
+  state.pickLog.push({ round: state.roundIndex, winner, loser });
+  state.winners.push(winner);
+  state.matchesPlayed++;
+  state.matchIndex++;
+
+  if (state.matchIndex < state.matches.length) {
+    renderMatch();
+  } else if (state.winners.length === 1) {
+    finishTournament(state.winners[0]);
+  } else {
+    state.players = state.winners;
+    state.roundIndex++;
+    buildRound();
+  }
+}
+
+function finishTournament(champion) {
+  document.getElementById("progress-fill").style.width = "100%";
+  renderResults(champion);
+  showScreen("results-screen");
+}
+
+function renderResults(champion) {
+  document.getElementById("champion-img").src = ASSET_PATH + champion.file;
+  document.getElementById("champion-img").alt = champion.name;
+  document.getElementById("champion-name").textContent = champion.name;
+
+  const trail = document.getElementById("trail");
+  trail.innerHTML = "";
+
+  const path = state.pickLog
+    .filter(entry => entry.winner.id === champion.id)
+    .sort((a, b) => a.round - b.round);
+
+  path.forEach(entry => {
+    const row = document.createElement("div");
+    row.className = "trail-row";
+
+    const roundLabel = document.createElement("div");
+    roundLabel.className = "trail-round-label";
+    roundLabel.textContent = ROUND_NAMES[entry.round];
+    row.appendChild(roundLabel);
+
+    row.appendChild(trailSide(entry.loser, false));
+
+    const arrow = document.createElement("div");
+    arrow.className = "trail-arrow";
+    arrow.textContent = "beat";
+    row.appendChild(arrow);
+
+    row.appendChild(trailSide(entry.winner, true));
+
+    trail.appendChild(row);
+  });
+}
+
+function trailSide(player, isWinner) {
+  const wrap = document.createElement("div");
+  wrap.className = isWinner ? "trail-winner" : "trail-beaten";
+
+  const img = document.createElement("img");
+  img.className = "trail-thumb";
+  img.src = ASSET_PATH + player.file;
+  img.alt = player.name;
+  img.onerror = () => { img.style.display = "none"; };
+
+  const name = document.createElement("div");
+  name.className = "trail-name";
+  name.textContent = player.name;
+
+  wrap.appendChild(img);
+  wrap.appendChild(name);
+  return wrap;
+}
+
+document.getElementById("play-btn").addEventListener("click", startGame);
+document.getElementById("again-btn").addEventListener("click", () => {
+  showScreen("start-screen");
+});
+</script>
+</body>
+</html>
